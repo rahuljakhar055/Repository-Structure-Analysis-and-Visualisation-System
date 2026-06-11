@@ -1,39 +1,24 @@
-import React from "react";
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
+  useEdgesState,
+  useNodesState,
 } from "reactflow";
-
 import "reactflow/dist/style.css";
-
-const initialNodes = [
-  {
-    id: "backend/app.py",
-    position: { x: 100, y: 100 },
-    data: { label: "app.py" },
-  },
-  {
-    id: "backend/scanner/traverse.py",
-    position: { x: 400, y: 200 },
-    data: { label: "traverse.py" },
-  },
-];
-
-const initialEdges = [
-  {
-    id: "edge-1",
-    source: "backend/app.py",
-    target: "backend/scanner/traverse.py",
-  },
-];
+import { sampleNodes, sampleEdges } from "../data/sampleGraph";
 
 function GraphCanvas({ onNodeClick }) {
+  const [nodes, , onNodesChange] = useNodesState(sampleNodes);
+  const [edges, , onEdgesChange] = useEdgesState(sampleEdges);
+
   return (
     <div className="graph-canvas">
       <ReactFlow
-        nodes={initialNodes}
-        edges={initialEdges}
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={(_, node) => onNodeClick(node)}
         fitView
       >

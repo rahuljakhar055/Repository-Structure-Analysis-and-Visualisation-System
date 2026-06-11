@@ -5,8 +5,10 @@ function SidePanel({ selectedNode }) {
 
       {selectedNode ? (
         <>
-          <p><strong>ID:</strong> {selectedNode.id}</p>
           <p><strong>Name:</strong> {selectedNode.data.label}</p>
+          <p><strong>Path:</strong> {selectedNode.data.path}</p>
+          <p><strong>Type:</strong> {selectedNode.data.type}</p>
+          <p><strong>Dependencies:</strong> {selectedNode.data.dependencyCount}</p>
         </>
       ) : (
         <p>Select a file node to view details.</p>

@@ -1,6 +1,8 @@
 from pathlib import Path
 import os
 
+from scanner.parser import parse_dependencies
+
 
 IGNORED_DIRS = {
     ".git",
@@ -40,6 +42,9 @@ def scan_repository(root_path: str) -> dict:
     if not root.exists():
         raise FileNotFoundError(f"Path does not exist: {root}")
 
+    if not root.is_dir():
+        raise NotADirectoryError(f"Path is not a directory: {root}")
+
     files = []
 
     for current_dir, dir_names, file_names in os.walk(root):
@@ -54,14 +59,17 @@ def scan_repository(root_path: str) -> dict:
         for file_name in file_names:
             file_path = current_path / file_name
             relative_path = file_path.relative_to(root).as_posix()
+            dependencies = parse_dependencies(file_path)
 
             files.append({
                 "id": relative_path,
                 "name": file_path.name,
                 "path": relative_path,
-                "extension": file_path.suffix,
+                "extension": file_path.suffix.lower(),
                 "type": get_file_type(file_path),
                 "sizeBytes": file_path.stat().st_size,
+                "dependencyCount": len(dependencies),
+                "dependencies": dependencies,
             })
 
     return {

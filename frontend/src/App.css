@@ -1,0 +1,25 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  height: 100vh;
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.side-panel {
+  border-left: 1px solid #ddd;
+  padding: 20px;
+  background: #f8f9fb;
+}

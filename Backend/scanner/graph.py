@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
 
-from .metrics import calculate_metrics
-from .traverse import scan_repository
+try:
+    from .metrics import calculate_metrics
+    from .traverse import scan_repository
+except ImportError:
+    from scanner.metrics import calculate_metrics
+    from scanner.traverse import scan_repository
 
 
 JS_EXTENSIONS = (".js", ".jsx", ".ts", ".tsx")
@@ -27,17 +31,23 @@ def build_repository_graph(root_path: str | Path) -> dict:
             {
                 "id": file_item["path"],
                 "position": {
-                    "x": (index % 4) * 280,
-                    "y": (index // 4) * 160,
+                    "x": (index % 4) * 300,
+                    "y": (index // 4) * 170,
                 },
                 "data": {
                     "label": f"{file_item['name']} ({metrics['loc']} LoC)",
                     "name": file_item["name"],
                     "path": file_item["path"],
                     "type": file_item["type"],
+                    "extension": file_item["extension"],
+                    "sizeBytes": file_item["sizeBytes"],
                     "loc": metrics["loc"],
+                    "totalLines": metrics["totalLines"],
+                    "blankLines": metrics["blankLines"],
+                    "commentLines": metrics["commentLines"],
                     "complexity": metrics["complexity"],
                     "dependencyCount": file_item["dependencyCount"],
+                    "dependencies": file_item["dependencies"],
                 },
             }
         )

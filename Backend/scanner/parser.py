@@ -16,7 +16,6 @@ JS_IMPORT_PATTERN = re.compile(
 
 
 def parse_dependencies(file_path: str | Path) -> list[dict]:
-    """Parse a source file and return dependency names without running code."""
     path = Path(file_path)
     extension = path.suffix.lower()
 
@@ -101,4 +100,7 @@ def parse_js_like_dependencies(path: Path) -> list[dict]:
 
 
 def read_text_safely(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="ignore")
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""

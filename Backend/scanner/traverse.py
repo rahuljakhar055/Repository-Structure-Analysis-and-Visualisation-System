@@ -1,18 +1,57 @@
-from pathlib import Path
-import os
+from __future__ import annotations
 
-from scanner.parser import parse_dependencies
+import os
+from pathlib import Path
+
+try:
+    from .parser import parse_dependencies
+except ImportError:
+    from scanner.parser import parse_dependencies
 
 
 IGNORED_DIRS = {
     ".git",
+    ".idea",
+    ".vscode",
     "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
     "node_modules",
+    "dist",
+    "build",
+    "coverage",
     "venv",
     ".venv",
     "env",
-    "dist",
-    "build",
+    ".repo_visualizer_cache",
+}
+
+IGNORED_FILES = {
+    ".DS_Store",
+    "Thumbs.db",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+}
+
+IGNORED_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".svg",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".pyc",
 }
 
 FILE_TYPES = {
@@ -23,21 +62,40 @@ FILE_TYPES = {
     ".tsx": "react-typescript",
     ".java": "java",
     ".c": "c",
-    ".cpp": "cpp",
     ".h": "c-header",
+    ".cpp": "cpp",
+    ".hpp": "cpp-header",
+    ".cs": "csharp",
+    ".go": "go",
+    ".rs": "rust",
+    ".php": "php",
+    ".rb": "ruby",
     ".html": "html",
     ".css": "css",
+    ".scss": "scss",
     ".json": "json",
     ".md": "markdown",
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".toml": "toml",
+    ".xml": "xml",
 }
 
 
-def get_file_type(file_path: Path) -> str:
-    return FILE_TYPES.get(file_path.suffix.lower(), "unknown")
+def get_file_type(path: Path) -> str:
+    return FILE_TYPES.get(path.suffix.lower(), "unknown")
 
 
-def scan_repository(root_path: str) -> dict:
-    root = Path(root_path).resolve()
+def should_ignore_dir(path: Path) -> bool:
+    return path.name in IGNORED_DIRS
+
+
+def should_ignore_file(path: Path) -> bool:
+    return path.name in IGNORED_FILES or path.suffix.lower() in IGNORED_EXTENSIONS
+
+
+def scan_repository(root_path: str | Path) -> dict:
+    root = Path(root_path).expanduser().resolve()
 
     if not root.exists():
         raise FileNotFoundError(f"Path does not exist: {root}")
@@ -47,30 +105,42 @@ def scan_repository(root_path: str) -> dict:
 
     files = []
 
-    for current_dir, dir_names, file_names in os.walk(root):
-        current_path = Path(current_dir)
+    for current_dir_raw, dir_names, file_names in os.walk(root):
+        current_dir = Path(current_dir_raw)
 
         dir_names[:] = [
-            directory
-            for directory in dir_names
-            if directory not in IGNORED_DIRS
+            dir_name
+            for dir_name in dir_names
+            if not should_ignore_dir(current_dir / dir_name)
         ]
 
         for file_name in file_names:
-            file_path = current_path / file_name
-            relative_path = file_path.relative_to(root).as_posix()
-            dependencies = parse_dependencies(file_path)
+            file_path = current_dir / file_name
 
-            files.append({
-                "id": relative_path,
-                "name": file_path.name,
-                "path": relative_path,
-                "extension": file_path.suffix.lower(),
-                "type": get_file_type(file_path),
-                "sizeBytes": file_path.stat().st_size,
-                "dependencyCount": len(dependencies),
-                "dependencies": dependencies,
-            })
+            if should_ignore_file(file_path):
+                continue
+
+            try:
+                relative_path = file_path.relative_to(root).as_posix()
+                dependencies = parse_dependencies(file_path)
+                size_bytes = file_path.stat().st_size
+            except OSError:
+                continue
+
+            files.append(
+                {
+                    "id": relative_path,
+                    "name": file_path.name,
+                    "path": relative_path,
+                    "extension": file_path.suffix.lower(),
+                    "type": get_file_type(file_path),
+                    "sizeBytes": size_bytes,
+                    "dependencyCount": len(dependencies),
+                    "dependencies": dependencies,
+                }
+            )
+
+    files.sort(key=lambda item: item["path"].lower())
 
     return {
         "root": str(root),
